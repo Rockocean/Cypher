@@ -57,7 +57,7 @@
             top: 80%;
             left: 51%;
             transform: translate(-50%, -50%);
-            width: 187px;
+            width: 130px;
             cursor: pointer;
         }
 
@@ -299,7 +299,8 @@
             modal.style.display = 'block';
             modalOverlay.style.display = 'block';
             const thankYouText = generateThankYouText();
-            typeText(thankYouText);
+            //typeText(thankYouText);
+	    modalContent.textContent = thankYouText;
         });
 
         // 点击遮罩层关闭弹窗
