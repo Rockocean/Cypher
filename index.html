@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cypher Server</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: black;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+        }
+
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 10px;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            width: 320px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .input-group {
+            position: relative;
+            width: 100%;
+        }
+
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            outline: none;
+            border-radius: 5px;
+        }
+
+        input:focus {
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #0f0;
+            color: #0f0;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        button:hover {
+            background: rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        h2 {
+            color: #0f0;
+            text-align: center;
+            margin: 0 0 30px 0;
+            letter-spacing: 2px;
+            font-size: 24px;
+        }
+
+        .error-message {
+            color: #f00;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+            position: absolute;
+            width: 100%;
+            bottom: -25px;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #0f0;
+            border-radius: 8px;
+            padding: 30px;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            text-align: center;
+            min-width: 320px;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .modal.fade-out {
+            opacity: 0;
+        }
+
+        .modal-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            color: #0f0;
+            font-size: 16px;
+            letter-spacing: 1px;
+        }
+
+        .modal-image {
+            max-width: 400px;
+            max-height: 400px;
+            display: none;
+            margin-top: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .modal-image.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .final-message {
+            color: #0f0;
+            font-size: 20px;
+            letter-spacing: 2px;
+            text-align: center;
+            margin: 0;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        /* 错误弹窗特殊样式 */
+        .error-modal {
+            border-color: #f00;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .error-modal .modal-text {
+            color: #f00;
+        }
+
+        /* 加载动画 */
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #0f0;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 遮罩层 */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .overlay.fade-out {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+    <div class="login-container">
+        <form class="login-form">
+            <h2>CYPHER SERVER LOGIN</h2>
+            <div class="input-group">
+                <input type="text" placeholder="Synaptic ID" required>
+            </div>
+            <div class="input-group">
+                <input type="password" placeholder="Quantum keys" required>
+            </div>
+            <button type="submit">Login verification</button>
+        </form>
+    </div>
+
+    <!-- 遮罩层 -->
+    <div class="overlay"></div>
+
+    <!-- 验证弹窗 -->
+    <div class="modal" id="verifyModal">
+        <div class="modal-content">
+            <p class="modal-text">请注视屏幕，Z███-██N-█H███模因触媒检测中</p>
+            <div class="loader"></div>
+        </div>
+        <img src="meme.jpg" alt="Meme" class="modal-image" id="memeImage">
+    </div>
+
+    <!-- 最终欢迎弹窗 -->
+    <div class="modal" id="welcomeModal">
+        <div class="modal-content">
+            <p class="final-message">欢迎，已获授权的人员</p>
+        </div>
+    </div>
+
+    <!-- 错误弹窗 -->
+    <div class="modal error-modal" id="errorModal">
+        <div class="modal-content">
+            <p class="modal-text">ERROR<br>
+                你偶然进行的访问仅有可能是因概率极低的不幸巧合所致。<br>
+                若立即关闭该文件并清空浏览记录，不会有纪律处分适用。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+
+        // 设置canvas尺寸为窗口大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Matrix效果的字符
+        const chars = '01';
+        const fontSize = 12;
+        const columns = Math.floor(canvas.width / fontSize);
+        
+        // 每列字符的Y坐标
+        const drops = Array(columns).fill(1);
+
+        function draw() {
+            // 设置半透明黑色背景，形成拖尾效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 设置文字颜色和样式
+            ctx.fillStyle = '#0f0';
+            ctx.font = fontSize + 'px monospace';
+
+            // 绘制字符
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // 当字符到达底部或随机重置时，重置到顶部
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        // 动画循环
+        setInterval(draw, 50);
+
+        // 显示弹窗函数
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const overlay = document.querySelector('.overlay');
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+        }
+
+        // 隐藏弹窗函数
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const overlay = document.querySelector('.overlay');
+            
+            // 添加淡出类
+            modal.classList.add('fade-out');
+            if (!document.querySelector('.modal:not(.fade-out)[style*="display: block"]')) {
+                overlay.classList.add('fade-out');
+            }
+
+            // 等待动画完成后隐藏元素
+            setTimeout(() => {
+                modal.style.display = 'none';
+                modal.classList.remove('fade-out');
+                if (!document.querySelector('.modal[style*="display: block"]')) {
+                    overlay.style.display = 'none';
+                    overlay.classList.remove('fade-out');
+                }
+            }, 500);
+        }
+
+        // 登录验证流程
+        async function loginProcess() {
+            // 显示验证弹窗
+            showModal('verifyModal');
+            
+            // 3秒后显示meme图片
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            const memeImage = document.getElementById('memeImage');
+            memeImage.style.display = 'block';
+            // 添加一个小延迟后添加show类，以触发淡入效果
+            setTimeout(() => {
+                memeImage.classList.add('show');
+            }, 50);
+            
+            // 显示图片5秒
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            // 隐藏验证弹窗并等待淡出完成
+            hideModal('verifyModal');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 显示欢迎弹窗
+            showModal('welcomeModal');
+            
+            // 5秒后跳转
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            window.location.href = 'matrix_inner.html';
+        }
+
+        // 表单提交处理
+        document.querySelector('.login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const inputs = e.target.querySelectorAll('input');
+            const username = inputs[0].value;
+            const password = inputs[1].value;
+            
+            if (username === 'AmirN' && password === '1216') {
+                loginProcess();
+            } else {
+                // 显示错误弹窗，10秒后自动关闭
+                showModal('errorModal');
+                setTimeout(() => {
+                    hideModal('errorModal');
+                }, 10000);
+            }
+        });
+    </script>
+</body>
+</html> 
